@@ -1,4 +1,5 @@
 import {
+  Bytes,
   Provable,
   Bool,
   Group,
@@ -28,7 +29,18 @@ class Header extends Struct({
 }) {}
 
 const BtcHeader = {
-  validateHeader(header: Header) {
-
+  validate(header: Header) {
+    BtcHeader.validateBits(header);
   },
+  validateBits(headerBits: any): Header {
+    // calculate double hash of header
+    const hash : Bytes = Hash.SHA2_256.hash(Hash.SHA2_256.hash(headerBits));
+
+    // validate threshold
+
+  }
 };
+
+const validateThreshold = () => {
+
+}
