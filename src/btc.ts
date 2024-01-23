@@ -117,32 +117,6 @@ const validateMantissa = (thresholdBytes: Bytes, difficultyExpInt: UInt32): Byte
   return thresholdBits;
 }
 
-/// Calculate work given threshold bits
-/// Bitcoin's formula for work W is defined as
-/// W := 2**256 // threshold
-// fn calculate_work<F: RichField + Extendable<D>, const D: usize>(
-//   builder: &mut CircuitBuilder<F, D>,
-//   threshold_bits: [BoolTarget; 256],
-// ) -> BigUintTarget {
-//   let _f = builder._false();
-//
-//   let mut threshold_bits_copy = [_f; HASH_LEN_BITS];
-//   let mut numerator_bits = [_f; HASH_LEN_BITS];
-//
-//   // Fast way to compute numerator := 2**256
-//   // BigUint math way is super slow
-//   for i in 0..HASH_LEN_BITS {
-//     numerator_bits[i] = builder.constant_bool(true);
-//     threshold_bits_copy[i] = builder.add_virtual_bool_target_safe(); // Will verify that input is 0 or 1
-//     builder.connect(threshold_bits[i].target, threshold_bits_copy[i].target);
-//   }
-//
-//   let numerator_as_biguint = bits_to_biguint_target(builder, numerator_bits.to_vec());
-//   let denominator = bits_to_biguint_target(builder, threshold_bits_copy.to_vec());
-//   let work = builder.div_biguint(&numerator_as_biguint, &denominator);
-//   work
-// }
-
 const calculateWork = (thresholdBits: Bytes): UInt32 => {
   const zero = Field(0);
   const one = Field(1);
