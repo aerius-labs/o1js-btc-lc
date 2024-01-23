@@ -90,3 +90,29 @@ const validateThreshold = (headerBits: Bytes, hash: Bytes): Bytes => {
 
   return thresholdBits;
 }
+
+const validateMantissa = (thresholdBytes: Bytes, difficultyExpInt: UInt32): Bytes => {
+  const zero = Field(0);
+  const one = Field(1);
+  const const32 = Field(32);
+
+  const thresholdBits = new Bytes(256);
+  for (let i = 0; i < 256; i++) {
+    thresholdBits[i] = Field.random();
+  }
+
+  for (let j = 0; j < 32; j++) {
+    const isZero = thresholdBytes[j].isZero();
+    const isMantissaByte = (j === 32 - difficultyExpInt.value) || (j === 32 - difficultyExpInt.value + 1) || (j === 32 - difficultyExpInt.value + 2);
+    const inRange = isMantissaByte || isZero;
+    const mistakeExists = inRange.not();
+    thresholdBits[j * 8].assign(mistakeExists);
+  }
+
+  for (let j = 0; j < 32; j++) {
+    const thresholdBitsToByte = Bytes.toUInt32(thresholdBits.slice(j * 8, (j + 1) * 8));
+    thresholdBytes[j].assign(thresholdBitsToByte);
+  }
+
+  return thresholdBits;
+}
