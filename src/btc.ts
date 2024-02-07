@@ -1,139 +1,100 @@
-import {
-  Bytes,
-  Provable,
-  Bool,
-  Group,
-  PublicKey,
-  Scalar,
-  PrivateKey,
-  Field,
-  Struct,
-  Circuit,
-  Experimental,
-  UInt32,
-  Hash,
-} from 'o1js/src';
-import * as assert from 'assert';
+import { Field, UInt32, Provable, Hash, Struct } from 'o1js/src';
+import { Bytes, Gadgets, UInt8 } from 'o1js';
+import { modExp } from './utils';
 
-const HASH_BITS = 256;
-const HASH_BYTES = HASH_BITS / 8;
-const HEADER_BYTES = 80;
-const HEADER_BITS = HEADER_BYTES * 8;
 
-export { BtcHeader };
+// Define a provable type for 256-bit unsigned integers
 
-class Header extends Struct({
-  headerBits: Provable.Array(Bool, HEADER_BITS),
-  thresholdBits: Provable.Array(Bool, HASH_BITS),
-  hash: Provable.Array(Bool, HASH_BITS),
-  work: Provable.Array(UInt32, 8),
+class UInt256 extends Struct({
+  value: Provable.Array(UInt32, 8)
 }) {}
 
-const BtcHeader = {
-  validate(header: Header) {
-    BtcHeader.validateBits(header.headerBits);
-  },
-  validateBits(headerBits: Bytes): Header {
-    assert(headerBits.length === HEADER_BYTES, 'Invalid header length');
+// Define a provable type for 80-byte and 32-byte arrays
 
-    // calculate double hash of header
-    const hash : Bytes = Hash.SHA2_256.hash(Hash.SHA2_256.hash(headerBits));
+class Bytes80 extends Bytes(80) {}
 
-    // validate threshold
+class Bytes32 extends Bytes(32) {}
 
+
+// Define a struct for the Bitcoin block header
+// @ts-ignore
+class BtcHeader extends Struct({
+  version: UInt32,
+  prevBlock: Bytes32,
+  merkleRoot: Bytes32,
+  timestamp: UInt32,
+  bits: UInt32,
+  nonce: UInt32
+
+}) {
+
+  // Method to serialize the header into bytes
+
+  toBytes() {
+
+    return new Bytes80([
+
+      ...this.version.toFields().map((x) => UInt8.from(x)),
+
+      ...this.prevBlock.provable.toBytes(),
+
+      ...this.merkleRoot.provable.toBytes(),
+
+      ...this.timestamp.toFields().map((x) => UInt8.from(x)),
+
+      ...this.bits.toFields().map((x) => UInt8.from(x)),
+
+      ...this.nonce.toFields().map((x) => UInt8.from(x))
+
+    ]);
 
   }
-};
 
-const validateThreshold = (headerBits: Bytes, hash: Bytes): Bytes => {
-  const zero = Field(0);
 
-  // Extract difficulty exponent from header
-  const difficultyExpBits = headerBits.slice(600, 608);
-  const difficultyExpInt = Bytes.toUInt32(difficultyExpBits);
+  // Method to calculate the hash of the header
 
-  // Assign threshold byte from header bytes
-  const thresholdBytes = new Bytes(32);
-  for (let i = 0; i < 32; i++) {
-    thresholdBytes[i] = Field.random();
+  hash() {
+
+    const headerBytes = this.toBytes();
+
+    // Perform double SHA256 hash
+
+    return Hash.SHA2_256.hash(Hash.SHA2_256.hash(headerBytes));
+
   }
-  const assignThresholdByte = (
-    thresholdByteIndex: number,
-    headerBitIndex: number
-  ) => {
-    const thresholdByteIdx = Field.fromCanonicalUInt32(thresholdByteIndex);
-    const accessIdx = Field.sub(thresholdByteIdx, difficultyExpInt);
 
-    const headerByte = Bytes.toUInt32(headerBits.slice(headerBitIndex, headerBitIndex + 8));
 
-    const thresholdByte = thresholdBytes[accessIdx];
-    thresholdByte.assign(headerByte);
-  };
-  assignThresholdByte(32, 592);
-  assignThresholdByte(33, 584);
-  assignThresholdByte(34, 576);
+  // Method to validate the header
 
-  // Ensure validity of threshold
-  // Check 1: Ensure SHA256(block) < threshold
-  const sha1Bytes = new Bytes(32);
-  for (let j = 0; j < 32; j++) {
-    sha1Bytes[j] = Field.random();
+  validate() {
 
-    const byteFromBits = Bytes.toUInt32(sha1Targets.slice(j * 8, (j + 1) * 8));
-    sha1Bytes[j].assign(byteFromBits);
+    const hash = this.hash();
+
+    const target = this.bitsToTarget();
+
+    // Check if the hash is less than the target
+
+    hash.assertLessThan(target);
+
   }
-  const isLess = Bytes.listLessThanOrEqual(thresholdBytes, sha1Bytes);
-  const one = Field.true();
-  isLess.assign(one);
-  // Check 2: Ensure exponent and mantissa bytes are valid
-  const thresholdBits = validateMantissa(thresholdBytes, difficultyExpInt);
 
-  return thresholdBits;
+
+  // Method to convert bits field to target
+
+  bitsToTarget() {
+
+    // Extract the exponent and coefficient from the bits field
+
+    const exponent = Gadgets.rightShift64(this.bits.value, 24);
+
+    const coefficient = this.bits.and(UInt32.from(0x00ffffff));
+
+    // Calculate the target
+    const target = modExp(coefficient.value, exponent.sub(Field.from(3)).mul(Field.from(8)));
+
+  }
+
 }
 
-const validateMantissa = (thresholdBytes: Bytes, difficultyExpInt: UInt32): Bytes => {
-  const zero = Field(0);
-  const one = Field(1);
-  const const32 = Field(32);
 
-  const thresholdBits = new Bytes(256);
-  for (let i = 0; i < 256; i++) {
-    thresholdBits[i] = Field.random();
-  }
-
-  for (let j = 0; j < 32; j++) {
-    const isZero = thresholdBytes[j].isZero();
-    const isMantissaByte = (j === 32 - difficultyExpInt.value) || (j === 32 - difficultyExpInt.value + 1) || (j === 32 - difficultyExpInt.value + 2);
-    const inRange = isMantissaByte || isZero;
-    const mistakeExists = inRange.not();
-    thresholdBits[j * 8].assign(mistakeExists);
-  }
-
-  for (let j = 0; j < 32; j++) {
-    const thresholdBitsToByte = Bytes.toUInt32(thresholdBits.slice(j * 8, (j + 1) * 8));
-    thresholdBytes[j].assign(thresholdBitsToByte);
-  }
-
-  return thresholdBits;
-}
-
-const calculateWork = (thresholdBits: Bytes): UInt32 => {
-  const zero = Field(0);
-  const one = Field(1);
-  const const32 = Field(32);
-
-  const numeratorBits = new Bytes(256);
-  for (let i = 0; i < 256; i++) {
-    numeratorBits[i] = Field.random();
-  }
-
-  for (let j = 0; j < 256; j++) {
-    numeratorBits[j].assign(one);
-  }
-
-  const numerator = Bytes.toUInt32(numeratorBits);
-  const denominator = Bytes.toUInt32(thresholdBits);
-  const work = numerator.div(denominator);
-
-  return work;
-}
+export { BtcHeader };
