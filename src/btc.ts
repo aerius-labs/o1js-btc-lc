@@ -1,20 +1,14 @@
-import { Field, UInt32, Provable, Hash, Struct } from 'o1js/src';
+import { Field, UInt32, Provable, Hash, Struct } from 'o1js';
 import { Bytes, Gadgets, UInt8 } from 'o1js';
-import { modExp } from './utils';
-
 
 // Define a provable type for 256-bit unsigned integers
-
 class UInt256 extends Struct({
   value: Provable.Array(UInt32, 8)
 }) {}
 
 // Define a provable type for 80-byte and 32-byte arrays
-
 class Bytes80 extends Bytes(80) {}
-
 class Bytes32 extends Bytes(32) {}
-
 
 // Define a struct for the Bitcoin block header
 // @ts-ignore
@@ -27,25 +21,15 @@ class BtcHeader extends Struct({
   nonce: UInt32
 
 }) {
-
   // Method to serialize the header into bytes
-
   toBytes() {
-
     return new Bytes80([
-
       ...this.version.toFields().map((x) => UInt8.from(x)),
-
-      ...this.prevBlock.provable.toBytes(),
-
-      ...this.merkleRoot.provable.toBytes(),
-
+      ...this.prevBlock.provable.bytes,
+      ...this.merkleRoot.provable.bytes,
       ...this.timestamp.toFields().map((x) => UInt8.from(x)),
-
       ...this.bits.toFields().map((x) => UInt8.from(x)),
-
       ...this.nonce.toFields().map((x) => UInt8.from(x))
-
     ]);
 
   }
@@ -54,13 +38,9 @@ class BtcHeader extends Struct({
   // Method to calculate the hash of the header
 
   hash() {
-
     const headerBytes = this.toBytes();
-
     // Perform double SHA256 hash
-
     return Hash.SHA2_256.hash(Hash.SHA2_256.hash(headerBytes));
-
   }
 
 
@@ -74,7 +54,8 @@ class BtcHeader extends Struct({
 
     // Check if the hash is less than the target
 
-    hash.assertLessThan(target);
+    // hash. (target);
+    hash.bytes
 
   }
 
@@ -90,8 +71,9 @@ class BtcHeader extends Struct({
     const coefficient = this.bits.and(UInt32.from(0x00ffffff));
 
     // Calculate the target
-    const target = modExp(coefficient.value, exponent.sub(Field.from(3)).mul(Field.from(8)));
+    // const target = modExp(coefficient.value, exponent.sub(Field.from(3)).mul(Field.from(8)));
 
+    return coefficient;
   }
 
 }
