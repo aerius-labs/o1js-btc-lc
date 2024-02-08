@@ -1,6 +1,6 @@
 # Mina zkApp: Btc Lc O1js
 
-This template uses TypeScript.
+A bitcoing header light client implemented in o1js
 
 ## How to build
 

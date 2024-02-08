@@ -43,7 +43,6 @@ class BtcHeader extends Struct({
     return Hash.SHA2_256.hash(Hash.SHA2_256.hash(headerBytes));
   }
 
-
   // Method to validate the header
 
   validate() {
