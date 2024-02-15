@@ -1,14 +1,10 @@
-import { Field, UInt32, Provable, Hash, Struct } from 'o1js';
+import { Field, UInt32, Provable, Hash, Struct, Bool } from 'o1js';
 import { Bytes, Gadgets, UInt8 } from 'o1js';
 import { createForeignField } from 'o1js';
 import { modExp } from './utils';
 
-class Field256 extends createForeignField(1n << 256n) {}
-
-// Define a provable type for 256-bit unsigned integers
-class UInt256 extends Struct({
-  value: Provable.Array(UInt32, 8)
-}) {}
+// class Field256 extends createForeignField(1n << 256n) {}
+class Field257 extends createForeignField(1n << 257n) {}
 
 // Define a provable type for 80-byte and 32-byte arrays
 class Bytes80 extends Bytes(80) {}
@@ -38,7 +34,6 @@ class BtcHeader extends Struct({
 
   }
 
-
   // Method to calculate the hash of the header
 
   hash() {
@@ -49,22 +44,19 @@ class BtcHeader extends Struct({
 
   // Method to validate the header
 
-  validate() {
+  public validate() {
 
     const hash = this.hash();
     const hashBits = hash.toFields().flatMap((x) => x.toBits(8));
-    const hashU256 = Field256.fromBits(hashBits).assertCanonical();
+    const hashU257 = Field257.fromBits(hashBits).assertCanonical();
 
-    const target = this.bitsToTarget();
+    const target257 = this.bitsToTarget();
 
     // Check if the hash is less than the target
-
-
+    checkTarget(hashU257, target257);
   }
 
-
   // Method to convert bits field to target
-
   bitsToTarget() {
 
     // Extract the exponent and coefficient from the bits field
@@ -76,16 +68,21 @@ class BtcHeader extends Struct({
     // Calculate the target
     // const target = modExp(coefficient.value, exponent.sub(Field.from(3)).mul(Field.from(8)));
     const expU32 = modExp(coefficient.value, exponent.sub(Field.from(3)));
-    const exp = Field256.fromBits(expU32.toBits());
+    const exp = Field257.fromBits(expU32.toBits());
 
-    const multiplicand = new Field256.AlmostReduced(8);
+    const multiplicand = new Field257.AlmostReduced(8);
     const target = exp.mul(multiplicand);
     return target.assertCanonical();
   }
 
 }
 
-//
+const checkTarget = (hash: Field257, target: Field257) => {
+  const full = new Field257(1n << 256n);
+  const diff = full.sub(target);
+  const val = diff.add(hash);
+  const bits = val.toBits();
+  bits[256].assertFalse("hash is greater than target");
+}
 
-
-export { BtcHeader };
+export { BtcHeader, Field257, Bytes80, Bytes32 };
