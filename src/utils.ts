@@ -1,5 +1,7 @@
 import { Bool, Circuit, Field } from 'o1js';
 
+// This function is sourced from https://github.com/Trivo25/o1js-elgamal
+// It is used to perform modular exponentiation on Field elements
 export const modExp = (base: Field, exponent: Field) => {
   let bits = exponent.toBits();
   let n = base;
