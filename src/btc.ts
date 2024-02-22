@@ -1,4 +1,12 @@
-import { Field, UInt32, Provable, Hash, Struct, Bool, CanonicalForeignField } from 'o1js';
+import {
+  Field,
+  UInt32,
+  Provable,
+  Hash,
+  Struct,
+  Bool,
+  CanonicalForeignField,
+} from 'o1js';
 import { Bytes, Gadgets, UInt8 } from 'o1js';
 import { createForeignField } from 'o1js';
 import { modExp } from './utils';
@@ -20,8 +28,7 @@ class BtcHeader extends Struct({
   merkleRoot: Bytes32.provable,
   timestamp: UInt32,
   bits: UInt32,
-  nonce: Bytes4.provable
-
+  nonce: Bytes4.provable,
 }) {
   // Method to serialize the header into bytes
   toBytes() {
@@ -33,17 +40,16 @@ class BtcHeader extends Struct({
         UInt8.from(this.timestamp.and(UInt32.from(0xff))),
         UInt8.from(this.timestamp.and(UInt32.from(0xff00)).rightShift(8)),
         UInt8.from(this.timestamp.and(UInt32.from(0xff0000)).rightShift(16)),
-        UInt8.from(this.timestamp.and(UInt32.from(0xff000000)).rightShift(24))
+        UInt8.from(this.timestamp.and(UInt32.from(0xff000000)).rightShift(24)),
       ]).bytes,
       ...Bytes(4).from([
         UInt8.from(this.bits.and(UInt32.from(0xff))),
         UInt8.from(this.bits.and(UInt32.from(0xff00)).rightShift(8)),
         UInt8.from(this.bits.and(UInt32.from(0xff0000)).rightShift(16)),
-        UInt8.from(this.bits.and(UInt32.from(0xff000000)).rightShift(24))
+        UInt8.from(this.bits.and(UInt32.from(0xff000000)).rightShift(24)),
       ]).bytes,
-      ...this.nonce.bytes
+      ...this.nonce.bytes,
     ]);
-
   }
 
   // Method to calculate the hash of the header
@@ -69,7 +75,6 @@ class BtcHeader extends Struct({
 
   // Method to convert bits field to target
   bitsToTarget() {
-
     // Extract the exponent and significand from the bits field
     const exponent = Gadgets.rightShift64(this.bits.value, 24);
     const significand = this.bits.and(UInt32.from(0x00ffffff));
@@ -80,7 +85,6 @@ class BtcHeader extends Struct({
     const target = exp.mul(Field257.fromBits(significand.value.toBits()));
     return target.assertCanonical();
   }
-
 }
 
 const checkTarget = (hash: Field257, target: Field257) => {
@@ -88,7 +92,7 @@ const checkTarget = (hash: Field257, target: Field257) => {
   const diff = full.sub(target);
   const val = diff.add(hash).assertCanonical();
   const bits = val.toBits();
-  bits[256].assertFalse("hash is greater than target");
-}
+  bits[256].assertFalse('hash is greater than target');
+};
 
 export { BtcHeader, Field257, Bytes80, Bytes32, Bytes4 };

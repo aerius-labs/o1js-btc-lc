@@ -32,4 +32,4 @@ export const modExp = (base: Field, exponent: Field) => {
   }
 
   return n;
-}
+};

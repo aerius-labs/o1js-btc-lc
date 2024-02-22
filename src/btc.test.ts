@@ -16,9 +16,13 @@ describe('Bitcoin Header', () => {
   it('Acceptable header should be validated correctly', () => {
     const versionBytes = Bytes.fromHex('02000000');
     const version = Bytes4.from(versionBytes);
-    const prevBlockBytes = Bytes.fromHex('b6ff0b1b1680a2862a30ca44d346d9e8910d334beb48ca0c0000000000000000');
+    const prevBlockBytes = Bytes.fromHex(
+      'b6ff0b1b1680a2862a30ca44d346d9e8910d334beb48ca0c0000000000000000'
+    );
     const prevBlock = Bytes32.from(prevBlockBytes);
-    const merkleRootBytes = Bytes.fromHex('9d10aa52ee949386ca9385695f04ede270dda20810decd12bc9b048aaab31471');
+    const merkleRootBytes = Bytes.fromHex(
+      '9d10aa52ee949386ca9385695f04ede270dda20810decd12bc9b048aaab31471'
+    );
     const merkleRoot = Bytes32.from(merkleRootBytes);
     const timestamp = UInt32.from(0x24d95a54);
     const bits = UInt32.from(0x30c31b18);
@@ -32,7 +36,7 @@ describe('Bitcoin Header', () => {
       merkleRoot: merkleRoot,
       timestamp: timestamp,
       bits: bits,
-      nonce: nonce
+      nonce: nonce,
     });
 
     header.validate();
