@@ -1,11 +1,8 @@
 import {
   Field,
   UInt32,
-  Provable,
   Hash,
   Struct,
-  Bool,
-  CanonicalForeignField,
 } from 'o1js';
 import { Bytes, Gadgets, UInt8 } from 'o1js';
 import { createForeignField } from 'o1js';
@@ -21,7 +18,6 @@ class Bytes32 extends Bytes(32) {}
 class Bytes4 extends Bytes(4) {}
 
 // Define a struct for the Bitcoin block header
-// @ts-ignore
 class BtcHeader extends Struct({
   version: Bytes4.provable,
   prevBlock: Bytes32.provable,
