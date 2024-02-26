@@ -1,9 +1,4 @@
-import {
-  Field,
-  UInt32,
-  Hash,
-  Struct,
-} from 'o1js';
+import { Field, UInt32, Hash, Struct } from 'o1js';
 import { Bytes, Gadgets, UInt8 } from 'o1js';
 import { createForeignField } from 'o1js';
 import { modExp } from './utils';
